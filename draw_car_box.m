@@ -59,13 +59,13 @@ function draw_car_box( img, width, height )
         g = img(:, :, 2);
         b = img(:, :, 3);
         
-        c_r(1:width, 1:height) = r(orig_indices);
-        c_g(1:width, 1:height) = g(orig_indices);
-        c_b(1:width, 1:height) = b(orig_indices);
+        c_r = r(orig_indices);
+        c_g = g(orig_indices);
+        c_b = b(orig_indices);
         
-        car(:, :, 1) = c_r;
-        car(:, :, 2) = c_g;
-        car(:, :, 3) = c_b;
+        car(:, :, 1) = reshape(c_r, [height, width]);
+        car(:, :, 2) = reshape(c_g, [height, width]);
+        car(:, :, 3) = reshape(c_b, [height, width]);
         
         imshow(car, 'Parent', car_axes);
     end
