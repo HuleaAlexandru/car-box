@@ -1,4 +1,4 @@
-function draw_car_box( img, width, height )
+function [car] =  draw_car_box( img, width, height )
     figure;
     orig_axes = axes;
     imshow(img);
@@ -16,56 +16,58 @@ function draw_car_box( img, width, height )
     %first call
     car_box = plot([]);
     
-    d_box = [[0, width, width, 0]; [0, 0, height, height]]';
+    d_box = [[1, width, width, 1]; [height, height, 1, 1]]';
+    plot_offset = 20;
     callback([]);
-
+    
     addNewPositionCallback(vl, @(pos)callback(pos));
     addNewPositionCallback(hl, @(pos)callback(pos));
             
     function callback(pos)
-        display(pos);
         delete(car_box);
         
         v_pos = getPosition(vl);
         h_pos = getPosition(hl);
         
-        v = line_eq_2_points(v_pos(:, 1), v_pos(:, 2));
-        h = line_eq_2_points(h_pos(:, 1), h_pos(:, 2));
+        ox = v_pos(:, 1);
+        oy = v_pos(:, 2);
+        [vx, vy] = shrink(ox, oy, plot_offset);
         
-        s = line_eq_point_slope(v_pos(1, :), h.m);
-        n = line_eq_point_slope(v_pos(2, :), h.m);
-        v = line_eq_point_slope(h_pos(1, :), v.m);
-        e = line_eq_point_slope(h_pos(2, :), v.m);
+        ox = h_pos(:, 1);
+        oy = h_pos(:, 2);
+        [hx, hy] = shrink(ox, oy, plot_offset);
+        
+        v = line_eq_2_points(vx, vy);
+        h = line_eq_2_points(hx, hy);
+        
+        s = line_eq_point_slope([vx(1), vy(1)], h.m);
+        n = line_eq_point_slope([vx(2), vy(2)], h.m);
+        v = line_eq_point_slope([hx(1), hy(1)], v.m);
+        e = line_eq_point_slope([hx(2), hy(2)], v.m);
         
         p1 = int_point(v, s);
         p2 = int_point(s, e);
         p3 = int_point(e, n);
         p4 = int_point(n, v);
+           
+        s_box = [p2; p1; p4; p3];
+        p = [s_box; p2];
         
-        s_box = [p1; p2; p3; p4];
-        p = [s_box; p1];
         car_box = plot(orig_axes, p(:, 1), p(:, 2), 'g'); 
         
-       % compute affine trans
+        % compute affine trans
         a = find_affine_trans(d_box, s_box);
         
-        car = zeros(height, width, 3);
-        [x, y] = ind2sub([width, height], 1:height * width);
-        new_xy = int16(a.m * [x; y] + a.t);
-        
-        [orig_indices] = sub2ind(size(img), new_xy(1, :), new_xy(2, :));
-        
-        r = img(:, :, 1);
-        g = img(:, :, 2);
-        b = img(:, :, 3);
-        
-        c_r = r(orig_indices);
-        c_g = g(orig_indices);
-        c_b = b(orig_indices);
-        
-        car(:, :, 1) = reshape(c_r, [height, width]);
-        car(:, :, 2) = reshape(c_g, [height, width]);
-        car(:, :, 3) = reshape(c_b, [height, width]);
+        car = uint8(zeros(height, width, 3));
+        for i = 1:height
+            for j = 1:width
+                try
+                    n_idx = int16(a.m * [j; i] + a.t);
+                    car(i, j, :) = img(n_idx(2), n_idx(1), :);
+                catch
+                end
+            end
+        end
         
         imshow(car, 'Parent', car_axes);
     end

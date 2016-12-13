@@ -16,11 +16,11 @@ function [ trans ] = find_affine_trans( s, d)
     a(2:2:2*n, :) = ay;
     
     b = zeros(2 * n, 1);
-    b(1:2:2*n) = d(:, 2);
-    b(2:2:2*n) = d(:, 1);
+    b(1:2:2*n) = d(:, 1);
+    b(2:2:2*n) = d(:, 2);
     
     x = pinv(a'*a) * a' * b;
-    trans.m = reshape(x(1:4), [2, 2]); % rotation + scaling 
+    trans.m = reshape(x(1:4), [2, 2])'; % rotation + scale + shear
     trans.t = x(5:6); % translation
 end
 
